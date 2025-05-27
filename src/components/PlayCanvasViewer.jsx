@@ -7,7 +7,6 @@ const PlayCanvasViewer = ({
   className = ''
 }) => {
   const iframeRef = useRef(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [appReady, setAppReady] = useState(false);
   
@@ -17,9 +16,7 @@ const PlayCanvasViewer = ({
       // Check if the message is from our iframe
       if (event.data === 'app:ready1') {
         console.log('PlayCanvas app is ready');
-        setAppReady(true);
-        setIsLoading(false);
-        
+    
         // Send default selections after app is ready
         sendDefaultSelections();
       }
@@ -55,19 +52,16 @@ const PlayCanvasViewer = ({
         if (iframeRef.current && iframeRef.current.contentWindow) {
           // Set initial quality
           iframeRef.current.contentWindow.postMessage("highdis", "*");
-          // Note: We don't set isLoading=false here anymore, we wait for app:ready1
         }
       } catch (error) {
         console.error("Error during iframe load:", error);
         setHasError(true);
-        setIsLoading(false);
       }
     };
 
     const handleIframeError = () => {
       console.error("Failed to load PlayCanvas iframe");
       setHasError(true);
-      setIsLoading(false);
     };
 
     const iframe = iframeRef.current;
@@ -76,20 +70,11 @@ const PlayCanvasViewer = ({
       iframe.addEventListener('error', handleIframeError);
     }
 
-    // Set a timeout to handle cases where the iframe might not trigger events
-    const timeoutId = setTimeout(() => {
-      if (isLoading) {
-        console.warn("PlayCanvas iframe load timeout");
-        setIsLoading(false);
-      }
-    }, 15000); // 15 second timeout
-
     return () => {
       if (iframe) {
         iframe.removeEventListener('load', handleIframeLoad);
         iframe.removeEventListener('error', handleIframeError);
       }
-      clearTimeout(timeoutId);
     };
   }, []);
 
@@ -157,17 +142,6 @@ const PlayCanvasViewer = ({
           allow="accelerometer; autoplay; camera; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
         />
-      )}
-      
-      {/* Loading state - only shown until app:ready1 message is received */}
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-          <div className="text-center p-4 rounded-lg bg-white dark:bg-gray-700 shadow-lg">
-            <div className="w-12 h-12 border-4 border-t-emerald-500 border-gray-200 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className={`text-lg ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Loading 3D Preview...</p>
-            <p className={`text-sm mt-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Please wait while we prepare your experience</p>
-          </div>
-        </div>
       )}
       
       {/* Error state */}
